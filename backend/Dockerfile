@@ -1,16 +1,17 @@
-# Use Python 3.10 slim image to reduce size
-FROM python:3.10-slim
+# Use Python 3.12 slim image to reduce size (teammate's choice - newer version)
+FROM python:3.12-slim
 
-# Set memory limit for TensorFlow
+# Set memory limit for TensorFlow (prevents OOM errors)
 ENV TF_FORCE_GPU_ALLOW_GROWTH=true
 ENV TF_CPP_MIN_LOG_LEVEL=2
-ENV TF_MEMORY_ALLOCATION=0.4
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies (OpenCV and TensorFlow requirements)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-glx \
     libglib2.0-0 \
     libsm6 \
@@ -20,10 +21,13 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# Upgrade pip
+RUN pip install --upgrade pip
+
+# Copy requirements first for better Docker layer caching
 COPY requirements.txt .
 
-# Install Python dependencies
+# Install Python dependencies (no cache to reduce image size)
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
@@ -32,17 +36,16 @@ COPY app/ ./app/
 # Copy model files (make sure they exist)
 COPY models/ ./models/
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+# Copy start script and make it executable (teammate's approach)
+COPY start.sh .
+RUN chmod +x start.sh
 
 # Expose port (Render will set PORT env var)
 EXPOSE 10000
 
-# Health check (using curl instead of requests)
+# Health check to ensure service is running
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:${PORT:-10000}/health || exit 1
 
-# Start command (single worker to save memory)
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000} --workers 1 --limit-max-requests 1000
-
+# Use start.sh script (teammate's approach - cleaner and more flexible)
+CMD ["./start.sh"]
