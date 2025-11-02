@@ -118,12 +118,11 @@ export default function EmotionDetectionPage() {
         formData.append('file', blob, 'frame.jpg');
 
         try {
-          let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-          apiUrl = apiUrl.replace(/\/+$/, ''); // Remove trailing slashes
+          const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').trim().replace(/\/+$/, '');
           const fullUrl = `${apiUrl}/emotion/detect`;
-          console.log('API URL:', apiUrl);
-          console.log('Full URL:', fullUrl);
-          console.log('Sending emotion detection request...');
+          console.log('[DEBUG] API URL from env:', process.env.NEXT_PUBLIC_API_URL);
+          console.log('[DEBUG] Cleaned API URL:', apiUrl);
+          console.log('[DEBUG] Full request URL:', fullUrl);
           const response = await fetch(fullUrl, {
             method: 'POST',
             body: formData,
