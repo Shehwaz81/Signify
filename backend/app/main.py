@@ -51,9 +51,12 @@ async def log_requests(request, call_next):
     logger.info(f"Response status: {response.status_code} for {request.method} {request.url.path}")
     return response
 
-# Initialize services
+# Initialize services with lazy loading (saves memory at startup)
+# Services will only load heavy models when first request comes in
 emotion_service = EmotionService()
 sign_language_service = SignLanguageService()
+
+logger.info("Services initialized (models will load on first request to save memory)")
 
 @app.get("/")
 async def root():

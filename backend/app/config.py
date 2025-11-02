@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     emotion_model_path: str = os.getenv("EMOTION_MODEL_PATH", "models/fer2013_mini_XCEPTION.102-0.66.hdf5")
     sign_language_model_path: str = os.getenv("SIGN_LANGUAGE_MODEL_PATH", "models/sign_language_model.h5")
     
-    # MediaPipe settings
-    mediapipe_hands_model_complexity: int = 1
+    # MediaPipe settings (optimized for memory)
+    mediapipe_hands_model_complexity: int = 0  # Lowest complexity (0) to save memory
     mediapipe_hands_min_detection_confidence: float = 0.5
     mediapipe_hands_min_tracking_confidence: float = 0.5
     

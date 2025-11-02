@@ -65,8 +65,15 @@ class EmotionService:
             except Exception as e:
                 logger.warning(f"Could not configure TensorFlow memory: {e}")
             
-            # Load emotion model if it exists
+            # Load emotion model if it exists, try downloading if not
             model_path = settings.emotion_model_path
+            model_name = os.path.basename(model_path)
+            
+            # Try to download model if it doesn't exist
+            if not os.path.exists(model_path):
+                from .model_downloader import download_model_if_needed
+                download_model_if_needed(model_path, model_name)
+            
             if os.path.exists(model_path):
                 try:
                     logger.info(f"Loading emotion model from {model_path}...")

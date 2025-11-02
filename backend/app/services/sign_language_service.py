@@ -41,20 +41,33 @@ class SignLanguageService:
     def _initialize_mediapipe(self):
         """Initialize MediaPipe Holistic solution for comprehensive body tracking"""
         try:
-            self.holistic = self.mp_holistic.Holistic(
-                static_image_mode=False,
-                model_complexity=2,  # Higher complexity for better accuracy
-                enable_segmentation=False,
-                refine_face_landmarks=True,
-                min_detection_confidence=0.5,
-                min_tracking_confidence=0.5
-            )
+            # Use lowest complexity (0) to save memory - still accurate for sign language
+            # Only initialize when first request comes in (lazy loading)
+            # Don't initialize here - will be done on first use
             self.is_initialized = True
-            logger.info("Advanced sign language service initialized successfully")
+            logger.info("Sign language service ready (MediaPipe will initialize on first use)")
             
         except Exception as e:
             logger.error(f"Failed to initialize sign language service: {str(e)}")
             self.is_initialized = False
+    
+    def _get_holistic(self):
+        """Lazy initialization of MediaPipe Holistic to save memory at startup"""
+        if self.holistic is None:
+            try:
+                self.holistic = self.mp_holistic.Holistic(
+                    static_image_mode=False,
+                    model_complexity=0,  # Lowest complexity to save memory (was 2)
+                    enable_segmentation=False,
+                    refine_face_landmarks=False,  # Disable to save memory
+                    min_detection_confidence=0.5,
+                    min_tracking_confidence=0.5
+                )
+                logger.info("MediaPipe Holistic initialized (lazy loading)")
+            except Exception as e:
+                logger.error(f"Failed to initialize MediaPipe: {str(e)}")
+                raise
+        return self.holistic
     
     def _load_enhanced_sign_dictionary(self) -> Dict[str, str]:
         """Load comprehensive ASL dictionary including common gestures"""
@@ -144,7 +157,8 @@ class SignLanguageService:
             frame = np.array(image)
             
             # Process with MediaPipe Holistic
-            results = self.holistic.process(frame)
+            holistic = self._get_holistic()
+            results = holistic.process(frame)
             
             # Extract landmarks
             landmarks = self._extract_comprehensive_landmarks(results)

@@ -34,8 +34,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ ./app/
 
-# Copy model files (now included in git repository)
-COPY models/ ./models/
+# Create models directory (models will be downloaded on-demand to save image size)
+RUN mkdir -p ./models
 
 # Copy start script and make it executable (teammate's approach)
 COPY start.sh .
