@@ -66,7 +66,8 @@ export default function SignLanguagePage() {
         const formData = new FormData();
         formData.append('image', blob, 'frame.jpg');
 
-        const response = await fetch('http://localhost:8000/sign-language/translate', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${apiUrl}/sign-language/translate`, {
           method: 'POST',
           body: formData,
         });
