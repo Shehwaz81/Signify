@@ -210,4 +210,9 @@ node_modules/
 .env.local
 .DS_Store
 
+# Allow model files in backend/models for deployment
+!backend/models/
+!backend/models/*.hdf5
+!backend/models/*.h5
+
 # End of https://www.toptal.com/developers/gitignore/api/opencv,python
