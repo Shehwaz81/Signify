@@ -195,6 +195,19 @@ pyrightconfig.json
 pyvenv.cfg
 .venv
 pip-selfcheck.json
-venv/*
+venv/
+node_modules/
+*.h5
+*.hdf5
+*.tflite
+*.pt
+*.csv
+*.jpg
+*.jpeg
+*.png
+*.log
+.env
+.env.local
+.DS_Store
 
 # End of https://www.toptal.com/developers/gitignore/api/opencv,python

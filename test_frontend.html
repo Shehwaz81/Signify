@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signify Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.3);
+            border-left: 5px solid #4CAF50;
+        }
+        .error {
+            background: rgba(244, 67, 54, 0.3);
+            border-left: 5px solid #f44336;
+        }
+        button {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: transform 0.3s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        .video-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Signify Test Page</h1>
+        
+        <div id="backend-status" class="status">
+            <h3>Backend Status</h3>
+            <p id="backend-text">Checking...</p>
+        </div>
+        
+        <div id="frontend-status" class="status">
+            <h3>Frontend Status</h3>
+            <p id="frontend-text">This page is running!</p>
+        </div>
+        
+        <div class="video-container">
+            <h3>🎥 Camera Test</h3>
+            <video id="video" autoplay muted style="display: none;"></video>
+            <button onclick="startCamera()">Start Camera</button>
+            <button onclick="stopCamera()">Stop Camera</button>
+        </div>
+        
+        <div class="status">
+            <h3>🔧 Backend API Test</h3>
+            <button onclick="testBackend()">Test Backend Health</button>
+            <button onclick="testEmotionAPI()">Test Emotion API</button>
+            <button onclick="testSignLanguageAPI()">Test Sign Language API</button>
+            <div id="api-results"></div>
+        </div>
+    </div>
+
+    <script>
+        // Check backend status on page load
+        async function checkBackendStatus() {
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                document.getElementById('backend-text').textContent = `✅ Backend is running! Status: ${data.status}`;
+                document.getElementById('backend-status').className = 'status success';
+            } catch (error) {
+                document.getElementById('backend-text').textContent = `❌ Backend error: ${error.message}`;
+                document.getElementById('backend-status').className = 'status error';
+            }
+        }
+        
+        // Camera functions
+        let stream = null;
+        
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('video').srcObject = stream;
+                document.getElementById('video').style.display = 'block';
+            } catch (error) {
+                alert('Camera error: ' + error.message);
+            }
+        }
+        
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                document.getElementById('video').style.display = 'none';
+                stream = null;
+            }
+        }
+        
+        // API test functions
+        async function testBackend() {
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                document.getElementById('api-results').innerHTML = `
+                    <div class="status success">
+                        <h4>✅ Backend Health Check</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('api-results').innerHTML = `
+                    <div class="status error">
+                        <h4>❌ Backend Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function testEmotionAPI() {
+            document.getElementById('api-results').innerHTML = '<p>Testing emotion API...</p>';
+            // This would require an image upload, so we'll just show the endpoint
+            document.getElementById('api-results').innerHTML = `
+                <div class="status">
+                    <h4>📊 Emotion API Endpoint</h4>
+                    <p>POST http://localhost:8000/emotion/detect</p>
+                    <p>Upload an image to detect emotions</p>
+                </div>
+            `;
+        }
+        
+        async function testSignLanguageAPI() {
+            document.getElementById('api-results').innerHTML = `
+                <div class="status">
+                    <h4>🤟 Sign Language API Endpoints</h4>
+                    <p>POST http://localhost:8000/sign-language/translate</p>
+                    <p>POST http://localhost:8000/sign-language/continuous</p>
+                    <p>GET http://localhost:8000/sign-language/gestures</p>
+                    <p>Upload an image or video for sign language recognition</p>
+                </div>
+            `;
+        }
+        
+        // Initialize on page load
+        window.onload = function() {
+            checkBackendStatus();
+        };
+    </script>
+</body>
+</html>
