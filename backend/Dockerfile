@@ -33,9 +33,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ ./app/
 
-# Copy model files (directory must exist in build context)
-# If models/ is empty, create empty directory for service fallback
-RUN mkdir -p ./models
+# Copy model files (now included in git repository)
 COPY models/ ./models/
 
 # Copy start script and make it executable (teammate's approach)
