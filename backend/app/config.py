@@ -14,9 +14,9 @@ class Settings(BaseSettings):
     api_version: str = "1.0.0"
     debug: bool = False
     
-    # Model paths
-    emotion_model_path: str = "models/fer2013_mini_XCEPTION.102-0.66.hdf5"
-    sign_language_model_path: str = "models/sign_language_model.h5"
+    # Model paths (relative to backend directory)
+    emotion_model_path: str = os.getenv("EMOTION_MODEL_PATH", "models/fer2013_mini_XCEPTION.102-0.66.hdf5")
+    sign_language_model_path: str = os.getenv("SIGN_LANGUAGE_MODEL_PATH", "models/sign_language_model.h5")
     
     # MediaPipe settings
     mediapipe_hands_model_complexity: int = 1

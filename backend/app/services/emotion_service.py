@@ -25,10 +25,12 @@ class EmotionService:
         self.face_cascade = None
         self.emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral']
         self.is_initialized = False
-        self._initialize_models()
+        self.model_loaded = False
+        # Only initialize face cascade, load model lazily on first use
+        self._initialize_face_cascade()
     
-    def _initialize_models(self):
-        """Initialize emotion detection models"""
+    def _initialize_face_cascade(self):
+        """Initialize face cascade classifier (lightweight, fast to load)"""
         try:
             # Load face cascade
             cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
@@ -38,31 +40,60 @@ class EmotionService:
                 logger.error("Failed to load face cascade classifier")
                 return
             
-            # Load emotion model if it exists
-            if os.path.exists(settings.emotion_model_path):
-                try:
-                    # Load model without compiling to avoid optimizer compatibility issues
-                    self.model = load_model(settings.emotion_model_path, compile=False)
-                    logger.info("Emotion model loaded successfully")
-                except Exception as load_error:
-                    logger.warning(f"Could not load emotion model with compile=False, trying with compile=True: {str(load_error)}")
-                    try:
-                        # Try loading with compile=True as fallback
-                        self.model = load_model(settings.emotion_model_path)
-                        logger.info("Emotion model loaded successfully (with compilation)")
-                    except Exception as fallback_error:
-                        logger.error(f"Failed to load emotion model: {str(fallback_error)}")
-                        self.model = None
-            else:
-                logger.warning(f"Emotion model not found at {settings.emotion_model_path}")
-                # We'll use a fallback approach with MediaPipe
-            
             self.is_initialized = True
-            logger.info("Emotion service initialized successfully")
+            logger.info("Emotion service initialized (face cascade ready, model will load on first use)")
             
         except Exception as e:
             logger.error(f"Failed to initialize emotion service: {str(e)}")
             self.is_initialized = False
+    
+    def _load_emotion_model(self):
+        """Lazy load emotion model only when needed (saves memory at startup)"""
+        if self.model_loaded:
+            return
+        
+        try:
+            # Configure TensorFlow to use memory growth (prevents OOM)
+            import tensorflow as tf
+            # Limit CPU memory growth
+            try:
+                # Set TensorFlow to limit memory allocation
+                tf.config.set_visible_devices([], 'GPU')  # Disable GPU to save memory
+                # Set memory growth for CPU operations
+                tf.config.threading.set_inter_op_parallelism_threads(1)
+                tf.config.threading.set_intra_op_parallelism_threads(1)
+            except Exception as e:
+                logger.warning(f"Could not configure TensorFlow memory: {e}")
+            
+            # Load emotion model if it exists
+            model_path = settings.emotion_model_path
+            if os.path.exists(model_path):
+                try:
+                    logger.info(f"Loading emotion model from {model_path}...")
+                    # Load model without compiling to avoid optimizer compatibility issues
+                    self.model = load_model(model_path, compile=False)
+                    logger.info("Emotion model loaded successfully")
+                    self.model_loaded = True
+                except Exception as load_error:
+                    logger.warning(f"Could not load emotion model with compile=False, trying with compile=True: {str(load_error)}")
+                    try:
+                        # Try loading with compile=True as fallback
+                        self.model = load_model(model_path)
+                        logger.info("Emotion model loaded successfully (with compilation)")
+                        self.model_loaded = True
+                    except Exception as fallback_error:
+                        logger.error(f"Failed to load emotion model: {str(fallback_error)}")
+                        self.model = None
+                        self.model_loaded = False
+            else:
+                logger.warning(f"Emotion model not found at {model_path}, using fallback")
+                self.model = None
+                self.model_loaded = True  # Mark as loaded so we don't keep trying
+                
+        except Exception as e:
+            logger.error(f"Failed to load emotion model: {str(e)}")
+            self.model = None
+            self.model_loaded = True  # Mark as loaded to prevent retries
     
     def is_ready(self) -> bool:
         """Check if the service is ready"""
@@ -78,6 +109,10 @@ class EmotionService:
         Returns:
             Dictionary containing detected emotions
         """
+        # Lazy load model on first use
+        if not self.model_loaded:
+            self._load_emotion_model()
+        
         try:
             # Convert bytes to image
             image = Image.open(io.BytesIO(image_data))

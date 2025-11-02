@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: signify-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter  # Use starter plan for more memory (512MB -> 512MB, but can upgrade)
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PORT
+        value: "10000"
+    healthCheckPath: /health
+
