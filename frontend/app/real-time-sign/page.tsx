@@ -136,7 +136,7 @@ export default function RealTimeSignPage() {
         formData.append('file', blob, 'frame.jpg');
 
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+          const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
           console.log('Sending sign language request...');
           const response = await fetch(`${apiUrl}/sign-language/continuous`, {
             method: 'POST',
